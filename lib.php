@@ -437,7 +437,7 @@ function answersheet_pluginfile($course, $cm, $context, $filearea, array $args, 
  * @param cm_info $cm course module information
  */
 //function answersheet_extend_navigation(navigation_node $navref, stdClass $course, stdClass $module, cm_info $cm) {
-    // TODO Delete this function and its docblock, or implement it.
+    // Delete this function and its docblock, or implement it.
 //}
 
 /**
@@ -449,9 +449,9 @@ function answersheet_pluginfile($course, $cm, $context, $filearea, array $args, 
  * @param settings_navigation $settingsnav complete settings navigation tree
  * @param navigation_node $answersheetnode answersheet administration node
  */
-function answersheet_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $answersheetnode=null) {
-    // TODO Delete this function and its docblock, or implement it.
-}
+//function answersheet_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $answersheetnode=null) {
+    // Delete this function and its docblock, or implement it.
+//}
 
 /**
  * Obtains the automatic completion state for this feedback based on the condition

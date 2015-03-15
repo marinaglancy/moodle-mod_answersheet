@@ -40,11 +40,11 @@ class mod_answersheet_report {
         }
         $table = new html_table();
         $table->head = array(
-            'Student', // TODO strings
-            'Started',
-            'Grade',
-            'Percentage',
-            'Answers'
+            get_string('user'),
+            get_string('started', 'answersheet'),
+            get_string('grade'),
+            get_string('percentage', 'grades'),
+            get_string('answers', 'answersheet')
         );
         if ($userid) {
             array_shift($table->head);
@@ -61,7 +61,7 @@ class mod_answersheet_report {
             }
             $table->data[] = $data;
         }
-        return $OUTPUT->heading('Completed attempts', 3). // TODO string
+        return $OUTPUT->heading(get_string('completedattempts', 'answersheet'), 3).
             html_writer::table($table);
     }
 

@@ -51,17 +51,17 @@ class mod_answersheet_attempt_form extends moodleform {
         $mform->setType('id', PARAM_INT);
         $mform->addElement('hidden', 'attempt', $attempt->id);
         $mform->setType('attempt', PARAM_NOTAGS);
-        
+
         for ($i=0; $i<$questionscount; $i++) {
             $group = array();
             $answer = isset($answers[$i]) ? $answers[$i] : '';
             if ($freeze) {
                 if ($answer === $correctanswers[$i]) {
                     $icon = 'i/grade_correct';
-                    $alt = 'Correct'; // TODO
+                    $alt = get_string('correct', 'answersheet');
                 } else {
                     $icon = 'i/grade_incorrect';
-                    $alt = 'Wrong'; // TODO
+                    $alt = get_string('wrong', 'answersheet');
                 }
                 $group[] = &$mform->createElement('static', $i.'-x', '',
                         $OUTPUT->pix_icon($icon, $alt));

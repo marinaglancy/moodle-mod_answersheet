@@ -31,24 +31,23 @@ require_once(dirname(dirname(dirname(__FILE__))).'/config.php');
 require_once(dirname(__FILE__).'/lib.php');
 require_once($CFG->libdir.'/completionlib.php');
 
-$id = optional_param('id', 0, PARAM_INT); // Course_module ID, or
-$a  = optional_param('a', 0, PARAM_INT);  // ... answersheet instance ID - it should be named as the first character of the module.
-$attempt = optional_param('attempt', null, PARAM_NOTAGS);
-
+$id = optional_param('id', 0, PARAM_INT); // Course_module ID.
 if ($id) {
-    $cm         = get_coursemodule_from_id('answersheet', $id, 0, false, MUST_EXIST);
-    $course     = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
-    $answersheet  = $DB->get_record('answersheet', array('id' => $cm->instance), '*', MUST_EXIST);
-} else if ($a) {
-    $answersheet  = $DB->get_record('answersheet', array('id' => $a), '*', MUST_EXIST);
-    $course     = $DB->get_record('course', array('id' => $answersheet->course), '*', MUST_EXIST);
-    $cm         = get_coursemodule_from_instance('answersheet', $answersheet->id, $course->id, false, MUST_EXIST);
-    $id         = $cm->id;
+    $cm          = get_coursemodule_from_id('answersheet', $id, 0, false, MUST_EXIST);
+    $course      = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
+    $answersheet = $DB->get_record('answersheet', array('id' => $cm->instance), '*', MUST_EXIST);
 } else {
-    print_error('You must specify a course_module ID or an instance ID');
+    $a           = required_param('a', PARAM_INT); // Answersheet ID.
+    $answersheet = $DB->get_record('answersheet', array('id' => $a), '*', MUST_EXIST);
+    $course      = $DB->get_record('course', array('id' => $answersheet->course), '*', MUST_EXIST);
+    $cm          = get_coursemodule_from_instance('answersheet', $answersheet->id, $course->id, false, MUST_EXIST);
+    $id          = $cm->id;
 }
 
 require_login($course, true, $cm);
+$PAGE->set_activity_record($answersheet);
+
+$attempt = optional_param('attempt', null, PARAM_NOTAGS);
 
 $event = \mod_answersheet\event\course_module_viewed::create(array(
     'objectid' => $PAGE->cm->instance,
@@ -58,18 +57,9 @@ $event->add_record_snapshot('course', $PAGE->course);
 $event->add_record_snapshot($PAGE->cm->modname, $answersheet);
 $event->trigger();
 
-// Print the page header.
-
 $PAGE->set_url('/mod/answersheet/view.php', array('id' => $cm->id));
 $PAGE->set_title(format_string($answersheet->name));
 $PAGE->set_heading(format_string($course->fullname));
-
-/*
- * Other things you may want to set - remove if not needed.
- * $PAGE->set_cacheable(false);
- * $PAGE->set_focuscontrol('some-html-id');
- * $PAGE->add_body_class('answersheet-'.$somevar);
- */
 
 if (($attempt === 'new') && mod_answersheet_attempt::can_start($PAGE->cm, $answersheet)) {
     $attemptobj = mod_answersheet_attempt::start($PAGE->cm, $answersheet);
@@ -77,33 +67,40 @@ if (($attempt === 'new') && mod_answersheet_attempt::can_start($PAGE->cm, $answe
     redirect($url);
 }
 
-
-// Update 'viewed' state if required by completion system
+// Update 'viewed' state if required by completion system.
 $completion = new completion_info($course);
 $completion->set_module_viewed($PAGE->cm);
 
 $contents = '';
 
 if (((int)$attempt) > 0) {
+    // Display individual attempt.
     $attemptobj = mod_answersheet_attempt::get((int)$attempt, $PAGE->cm, $answersheet);
-    if ($attemptobj) {
+    if ($attemptobj && $attemptobj->can_view()) {
         $contents .= $attemptobj->display();
     }
 } else {
-    $attempts = mod_answersheet_attempt::get_user_attempts($PAGE->cm, $answersheet);
+    // Display current incompleted attampt.
     if ($attempt = mod_answersheet_attempt::find_incomplete_attempt($PAGE->cm, $answersheet)) {
         $url = new moodle_url('/mod/answersheet/view.php', array('id' => $id, 'attempt' => $attempt->id));
-        $contents .= html_writer::tag('div', html_writer::link($url, 'Continue attempt'), // TODO string
+        $contents .= html_writer::tag('div', html_writer::link($url,
+                get_string('continueattempt', 'answersheet')),
                 array('class' => 'continueattempt'));
     }
+
+    // Display link to start a new attempt.
     if (mod_answersheet_attempt::can_start($PAGE->cm, $answersheet)) {
         $url = new moodle_url('/mod/answersheet/view.php', array('id' => $id, 'attempt' => 'new'));
-        $contents .= html_writer::tag('div', html_writer::link($url, 'Start new attempt'), // TODO string
+        $contents .= html_writer::tag('div', html_writer::link($url,
+                get_string('startnerattempt', 'answersheet')),
                 array('class' => 'startattempt'));
     }
+
     if (has_capability('mod/answersheet:viewreports', $PAGE->context)) {
+        // View all attempts.
         $contents .= mod_answersheet_report::display($cm, $answersheet);
     } else {
+        // View own past attempts.
         $contents .= mod_answersheet_report::display($cm, $answersheet, $USER->id);
     }
 }
@@ -113,7 +110,8 @@ echo $OUTPUT->header();
 
 // Conditions to show the intro can change to look for own settings or whatever.
 if ($answersheet->intro) {
-    echo $OUTPUT->box(format_module_intro('answersheet', $answersheet, $cm->id), 'generalbox mod_introbox', 'answersheetintro');
+    echo $OUTPUT->box(format_module_intro('answersheet', $answersheet, $cm->id),
+            'generalbox mod_introbox', 'answersheetintro');
 }
 
 echo $contents;

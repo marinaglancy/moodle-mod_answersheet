@@ -39,15 +39,9 @@ class mod_answersheet_attempt {
     protected $answersheet;
     protected static $userattempts = array();
 
-    protected function __construct($id, $cm, $answersheet) {
-        global $DB;
-        if (is_object($id)) {
-            $this->attempt = $id;
-            $this->id = $this->attempt->id;
-        } else {
-            $this->id = $id;
-            $this->attempt = $DB->get_record('answersheet_attempt', array('id' => $id), '*', MUST_EXIST);
-        }
+    protected function __construct($record, $cm, $answersheet) {
+        $this->attempt = $record;
+        $this->id = $this->attempt->id;
         $this->cm = $cm;
         $this->answersheet = $answersheet;
     }
@@ -83,21 +77,22 @@ class mod_answersheet_attempt {
             'answersheetid' => $answersheet->id,
             'timestarted' => time()
         ));
-        return new self($id, $cm, $answersheet);
+        return self::get($id, $cm, $answersheet);
     }
 
     public static function get($id, $cm, $answersheet) {
-        global $USER;
-        try {
-            $attempt = new self($id, $cm, $answersheet);
-        } catch (Exception $e) {
-            return null;
-        }
-        if ($attempt->attempt->userid === $USER->id ||
-                has_capability('mod/answersheet:viewreports', context_module::instance($cm->id))) {
-            return $attempt;
+        global $DB;
+        if ($record = $DB->get_record('answersheet_attempt', array('id' => $id))) {
+            return new self($record, $cm, $answersheet);
         }
         return null;
+    }
+
+    public function can_view() {
+        global $USER;
+        return $this->attempt->userid === $USER->id ||
+                has_capability('mod/answersheet:viewreports',
+                        context_module::instance($this->cm->id));
     }
 
     /**
@@ -259,24 +254,30 @@ class mod_answersheet_attempt {
 
     protected function attempt_info() {
         global $USER, $DB;
-        $contents = '';
+        $contents = html_writer::start_tag('ul');
         if ($this->attempt->userid != $USER->id) {
             $namefields = get_all_user_name_fields(true);
             $user = $DB->get_record('user', array('id' => $this->attempt->userid),
                     $namefields);
-            $contents .= 'User: '.fullname($user).'<br>'; // TODO
+            $contents .= html_writer::tag('li', get_string('user') . ': '.fullname($user));
         }
-        $contents .= 'Started: '.userdate($this->attempt->timestarted, get_string('strftimedatetime', 'core_langconfig')).'<br>';
+        $contents .= html_writer::tag('li', get_string('started', 'answersheet') . ': ' .
+                userdate($this->attempt->timestarted, get_string('strftimedatetime', 'core_langconfig')));
         if ($this->attempt->timecompleted) {
-            $contents .= 'Completed: '.userdate($this->attempt->timestarted, get_string('strftimedatetime', 'core_langconfig')).'<br>';
+            $contents .= html_writer::tag('li', get_string('completed', 'answersheet') . ': ' .
+                    userdate($this->attempt->timestarted, get_string('strftimedatetime', 'core_langconfig')));
+            $contents .= html_writer::tag('li', get_string('grade') . ': ' .
+                    self::convert_grade($this->answersheet, $this->attemptgrade, true));
+            $contents .= html_writer::tag('li', get_string('percentage', 'grades') . ': ' .
+                    round($this->attempt->grade * 100, 2).'%');
         }
+        $contents .= html_writer::end_tag('ul');
         return $contents;
     }
 
     public function display() {
         $form = new mod_answersheet_attempt_form(null, (object)array('attempt' => $this));
         $q = preg_split('/,/', $this->attempt->answers);
-        //print_r($this->attempt);
         $form->set_data(array('q' => $q));
         if ($data = $form->get_data()) {
             self::save(!empty($data->q) ? $data->q : array(), isset($data->submitbutton));

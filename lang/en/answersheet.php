@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 /**
  * English strings for answersheet
  *
@@ -22,21 +21,29 @@
  * if you like, and it can span multiple lines.
  *
  * @package    mod_answersheet
- * @copyright  2015 Your Name
+ * @copyright  2015 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['modulename'] = 'answersheet';
-$string['modulenameplural'] = 'answersheets';
-$string['modulename_help'] = 'Use the answersheet module for... | The answersheet module allows...';
+$string['answers'] = 'Answers';
 $string['answersheetfieldset'] = 'Questions details';
 $string['answersheetname'] = 'Activity name';
 $string['answersheetname_help'] = 'This is the content of the help tooltip associated with the answersheetname field. Markdown syntax is supported.';
-$string['answersheet'] = 'answersheet';
+$string['answersheet'] = 'Answersheet';
+$string['completedattempts'] = 'Completed attempts';
+$string['continueattempt'] = 'Continue attempt';
+$string['correct'] = 'Correct';
+$string['completed'] = 'Completed';
 $string['completionpass'] = 'Require passing grade';
 $string['completionpass_help'] = 'If enabled, this activity is considered complete when the student receives a passing grade, with the pass grade set in the gradebook.';
 $string['completionsubmit'] = 'View as completed if the answers are submitted';
-$string['pluginadministration'] = 'answersheet administration';
-$string['pluginname'] = 'answersheet';
+$string['modulename'] = 'Answersheet';
+$string['modulenameplural'] = 'Answersheets';
+$string['modulename_help'] = 'Use to record students test answers on the answer sheet';
+$string['pluginadministration'] = 'Answersheet administration';
+$string['pluginname'] = 'Answersheet';
+$string['started'] = 'Started';
+$string['startnerattempt'] = 'Start new attempt';
+$string['wrong'] = 'Wrong';
