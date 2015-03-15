@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- *
+ * File contains mod_answersheet_attempt_form class
  *
  * @package    mod_answersheet
  * @copyright  2015 Marina Glancy
@@ -27,13 +27,16 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/formslib.php');
 
 /**
+ * mod_answersheet_attempt_form class
  *
- * @global core_renderer $OUTPUT
  * @package    mod_answersheet
  * @copyright  2015 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_answersheet_attempt_form extends moodleform {
+    /**
+     * Form definition
+     */
     protected function definition() {
         global $OUTPUT;
         $mform = $this->_form;
@@ -82,17 +85,10 @@ class mod_answersheet_attempt_form extends moodleform {
     }
 
     /**
-     * Use this method to a cancel and submit button to the end of your form. Pass a param of false
-     * if you don't want a cancel button in your form. If you have a cancel button make sure you
-     * check for it being pressed using is_cancelled() and redirecting if it is true before trying to
-     * get data with get_data().
-     *
-     * @param bool $cancel whether to show cancel button, default true
-     * @param string $submitlabel label for submit button, defaults to get_string('savechanges')
+     * Adds buttons to the form
      */
-    function add_abuttons($cancel = true){
+    function add_abuttons(){
         $mform =& $this->_form;
-        //when two elements we need a group
         $buttonarray=array();
         $buttonarray[] = &$mform->createElement('submit', 'submitbutton', get_string('submit'));
         $buttonarray[] = &$mform->createElement('submit', 'saveonly', get_string('save', 'question'));

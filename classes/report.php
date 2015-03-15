@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- *
+ * File contains mod_answersheet_report class
  *
  * @package    mod_answersheet
  * @copyright  2015 Marina Glancy
@@ -25,13 +25,21 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- *
+ * mod_answersheet_report class
  *
  * @package    mod_answersheet
  * @copyright  2015 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_answersheet_report {
+
+    /**
+     *
+     * @param cm_info $cm
+     * @param stdClass $answersheet
+     * @param int $userid
+     * @return string
+     */
     public static function display($cm, $answersheet, $userid = 0) {
         global $OUTPUT;
         $attempts = self::get_all_attempts($cm, $answersheet, $userid);
@@ -65,6 +73,15 @@ class mod_answersheet_report {
             html_writer::table($table);
     }
 
+    /**
+     * Retrieves all attempts for the activity or for the user
+     *
+     * @param cm_info $cm
+     * @param stdClass $answersheet
+     * @param int $userid
+     * @param bool $completedonly
+     * @return array
+     */
     protected static function get_all_attempts($cm, $answersheet, $userid = 0, $completedonly = true) {
         global $DB;
         $namefields = get_all_user_name_fields(true, 'u');

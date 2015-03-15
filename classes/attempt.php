@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- *
+ * File contains mod_answersheet_attempt class
  *
  * @package    mod_answersheet
  * @copyright  2015 Marina Glancy
@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- *
+ * mod_answersheet_attempt class allows to deal with one attempt.
  *
  * @package    mod_answersheet
  * @copyright  2015 Marina Glancy
@@ -33,35 +33,61 @@ defined('MOODLE_INTERNAL') || die();
  */
 class mod_answersheet_attempt {
 
-    protected $id;
     protected $attempt;
     protected $cm;
     protected $answersheet;
-    protected static $userattempts = array();
 
+    /**
+     * Constructor
+     *
+     * @param stdClass $record
+     * @param cm_info $cm
+     * @param stdClass $answersheet
+     */
     protected function __construct($record, $cm, $answersheet) {
         $this->attempt = $record;
-        $this->id = $this->attempt->id;
         $this->cm = $cm;
         $this->answersheet = $answersheet;
     }
 
+    /**
+     * Magic getter
+     *
+     * @param string $name
+     * @return mixed
+     */
     public function __get($name) {
-        if ($name === 'id' || $name === 'answersheet' || $name === 'cm' || $name === 'attempt') {
+        if ($name === 'answersheet' || $name === 'cm' || $name === 'attempt') {
             return $this->$name;
+        } else if ($name === 'id') {
+            return $this->attempt->id;
         }
     }
 
+    /**
+     * Retrieves incomplete attempt for the current user
+     *
+     * @param cm_info $cm
+     * @param stdClass $answersheet
+     * @return mod_answersheet_attempt|null
+     */
     public static function find_incomplete_attempt($cm, $answersheet) {
-        $attempts = self::get_user_attempts($cm, $answersheet);
-        foreach ($attempts as $attempt) {
-            if (!$attempt->attempt->timecompleted) {
-                return $attempt;
-            }
+        global $DB, $USER;
+        if ($record = $DB->get_record_select('answersheet_attempt',
+                'answersheetid = :aid AND userid = :userid AND timecompleted IS NULL',
+                array('aid' => $answersheet->id, 'userid' => $USER->id))) {
+            return new self($record, $cm, $answersheet);
         }
         return null;
     }
 
+    /**
+     * Checks if current user is able to start a new attempt
+     *
+     * @param cm_info $cm
+     * @param stdClass $answersheet
+     * @return bool
+     */
     public static function can_start($cm, $answersheet) {
         if (!has_capability('mod/answersheet:submit',
                 context_module::instance($cm->id), null/*, false*/)) {
@@ -70,6 +96,13 @@ class mod_answersheet_attempt {
         return self::find_incomplete_attempt($cm, $answersheet) ? false : true;
     }
 
+    /**
+     * Starts a new attempt
+     *
+     * @param cm_info $cm
+     * @param stdClass $answersheet
+     * @return mod_answersheet_attempt
+     */
     public static function start($cm, $answersheet) {
         global $DB, $USER;
         $id = $DB->insert_record('answersheet_attempt', array(
@@ -80,6 +113,14 @@ class mod_answersheet_attempt {
         return self::get($id, $cm, $answersheet);
     }
 
+    /**
+     * Retrieves the attempt by id
+     *
+     * @param int $id
+     * @param cm_info $cm
+     * @param stdClass $answersheet
+     * @return mod_answersheet_attempt|null
+     */
     public static function get($id, $cm, $answersheet) {
         global $DB;
         if ($record = $DB->get_record('answersheet_attempt', array('id' => $id))) {
@@ -88,6 +129,11 @@ class mod_answersheet_attempt {
         return null;
     }
 
+    /**
+     * Checks if the current user is able to view this attempt
+     *
+     * @return bool
+     */
     public function can_view() {
         global $USER;
         return $this->attempt->userid === $USER->id ||
@@ -96,27 +142,12 @@ class mod_answersheet_attempt {
     }
 
     /**
+     * Converts the grade to the scale string
      *
-     * @global moodle_database $DB
-     * @param cm_info $cm
-     * @param stdClass $answersheet
-     * @return array
+     * @param int $scaleid
+     * @param float $grade
+     * @return string
      */
-    public static function get_user_attempts($cm, $answersheet) {
-        global $DB, $USER;
-        if (!array_key_exists($cm->id, self::$userattempts)) {
-            $records = $DB->get_records('answersheet_attempt',
-                    array('userid' => $USER->id,
-                        'answersheetid' => $answersheet->id
-                        ), 'timestarted');
-            self::$userattempts[$cm->id] = array();
-            foreach ($records as $record) {
-                self::$userattempts[$cm->id][] = new self($record, $cm, $answersheet);
-            }
-        }
-        return self::$userattempts[$cm->id];
-    }
-
     public static function get_scale($scaleid, $grade){
         global $DB;
         static $scales = array();
@@ -154,6 +185,14 @@ class mod_answersheet_attempt {
         return $items[$instanceid];
     }
 
+    /**
+     * Converts the grade from the percentage to the current gradeitem's format
+     *
+     * @param stdClass $answersheet
+     * @param float $floatgrade
+     * @param bool $human
+     * @return string|float|int
+     */
     public static function convert_grade($answersheet, $floatgrade, $human = false) {
         if ($answersheet->grade > 0) {
             $rv = $floatgrade * $answersheet->grade;
@@ -171,6 +210,13 @@ class mod_answersheet_attempt {
         return $rv;
     }
 
+    /**
+     * Helper method for updating grades
+     *
+     * @param stdClass $answersheet
+     * @param int $userid
+     * @return array
+     */
     public static function get_last_completed_attempt_grade($answersheet, $userid) {
         global $DB;
         if (!$answersheet->grade) {
@@ -205,14 +251,32 @@ class mod_answersheet_attempt {
         return $rv;
     }
 
+    /**
+     * Parses the options list form the module settings
+     *
+     * @param string $value
+     * @return array
+     */
     public static function parse_options($value) {
         return preg_split('/\s*,\s*/', trim($value), -1, PREG_SPLIT_NO_EMPTY);
     }
 
+    /**
+     * Parses the correct answers list form the module settings
+     *
+     * @param string $value
+     * @return array
+     */
     public static function parse_answerslist($value) {
         return preg_split('/\s*[,|\n]\s*/', trim($value), -1, PREG_SPLIT_NO_EMPTY);
     }
 
+    /**
+     * Saves the attempt results
+     *
+     * @param array $rawanswers
+     * @param bool $finish
+     */
     protected function save($rawanswers, $finish = true) {
         global $DB, $CFG;
         $answers = array();
@@ -225,7 +289,7 @@ class mod_answersheet_attempt {
                 $missed = true;
             }
         }
-        $record = array('id' => $this->id,
+        $record = array('id' => $this->attempt->id,
                     'answers' => join(',', $answers));
         if ($finish) {
             $record['timecompleted'] = time();
@@ -243,6 +307,12 @@ class mod_answersheet_attempt {
         }
     }
 
+    /**
+     * Calculates the grade from the answers
+     *
+     * @param array $answers
+     * @return float
+     */
     protected function get_grade($answers) {
         $count = 0;
         $correctanswers = self::parse_answerslist($this->answersheet->answerslist);
@@ -252,6 +322,11 @@ class mod_answersheet_attempt {
         return 1.0 * $count / $this->answersheet->questionscount;
     }
 
+    /**
+     * Prepares attempt information for display
+     *
+     * @return type
+     */
     protected function attempt_info() {
         global $USER, $DB;
         $contents = html_writer::start_tag('ul');
@@ -275,6 +350,9 @@ class mod_answersheet_attempt {
         return $contents;
     }
 
+    /**
+     * Displays the attempt (as a form or review)
+     */
     public function display() {
         $form = new mod_answersheet_attempt_form(null, (object)array('attempt' => $this));
         $q = preg_split('/,/', $this->attempt->answers);
