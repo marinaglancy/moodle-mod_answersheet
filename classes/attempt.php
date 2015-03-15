@@ -93,7 +93,8 @@ class mod_answersheet_attempt {
         } catch (Exception $e) {
             return null;
         }
-        if ($attempt->attempt->userid === $USER->id) {
+        if ($attempt->attempt->userid === $USER->id ||
+                has_capability('mod/answersheet:viewreports', context_module::instance($cm->id))) {
             return $attempt;
         }
         return null;
@@ -220,6 +221,22 @@ class mod_answersheet_attempt {
         return 1.0 * $count / $this->answersheet->questionscount;
     }
 
+    protected function attempt_info() {
+        global $USER, $DB;
+        $contents = '';
+        if ($this->attempt->userid != $USER->id) {
+            $namefields = get_all_user_name_fields(true);
+            $user = $DB->get_record('user', array('id' => $this->attempt->userid),
+                    $namefields);
+            $contents .= 'User: '.fullname($user).'<br>'; // TODO
+        }
+        $contents .= 'Started: '.userdate($this->attempt->timestarted, get_string('strftimedatetime', 'core_langconfig')).'<br>';
+        if ($this->attempt->timecompleted) {
+            $contents .= 'Completed: '.userdate($this->attempt->timestarted, get_string('strftimedatetime', 'core_langconfig')).'<br>';
+        }
+        return $contents;
+    }
+
     public function display() {
         $form = new mod_answersheet_attempt_form(null, (object)array('attempt' => $this));
         $q = preg_split('/,/', $this->attempt->answers);
@@ -229,9 +246,10 @@ class mod_answersheet_attempt {
             self::save(!empty($data->q) ? $data->q : array(), isset($data->submitbutton));
             redirect(new moodle_url('/mod/answersheet/view.php', array('id' => $this->cm->id)));
         } else {
+            $contents = $this->attempt_info();
             ob_start();
             $form->display();
-            $contents = ob_get_contents();
+            $contents .= ob_get_contents();
             ob_end_clean();
             return $contents;
         }

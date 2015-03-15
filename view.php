@@ -86,7 +86,9 @@ $contents = '';
 
 if (((int)$attempt) > 0) {
     $attemptobj = mod_answersheet_attempt::get((int)$attempt, $PAGE->cm, $answersheet);
-    $contents .= $attemptobj->display();
+    if ($attemptobj) {
+        $contents .= $attemptobj->display();
+    }
 } else {
     $attempts = mod_answersheet_attempt::get_user_attempts($PAGE->cm, $answersheet);
     foreach ($attempts as $attempt) {
@@ -101,6 +103,9 @@ if (((int)$attempt) > 0) {
     if (mod_answersheet_attempt::can_start($PAGE->cm, $answersheet)) {
         $url = new moodle_url('/mod/answersheet/view.php', array('id' => $id, 'attempt' => 'new'));
         $contents .= html_writer::link($url, 'Start new attempt'); // TODO string
+    }
+    if (has_capability('mod/answersheet:viewreports', $PAGE->context)) {
+        $contents .= mod_answersheet_report::display($cm, $answersheet);
     }
 }
 
