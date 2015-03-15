@@ -57,6 +57,10 @@ function answersheet_supports($feature) {
             return true;
         case FEATURE_BACKUP_MOODLE2:
             return true;
+        case FEATURE_COMPLETION_TRACKS_VIEWS:
+            return true;
+        case FEATURE_COMPLETION_HAS_RULES:
+            return true;
         default:
             return null;
     }
@@ -346,14 +350,36 @@ function answersheet_grade_item_delete($answersheet) {
  * @param int $userid update grade of specific user only, 0 means all participants
  */
 function answersheet_update_grades(stdClass $answersheet, $userid = 0) {
-    global $CFG, $DB;
+    global $CFG;
     require_once($CFG->libdir.'/gradelib.php');
 
     // Populate array of grade objects indexed by userid.
-    $grades = array();
+    $grades = mod_answersheet_attempt::get_last_completed_attempt_grade($answersheet, $userid);
 
     grade_update('mod/answersheet', $answersheet->course, 'mod', 'answersheet', $answersheet->id, 0, $grades);
 }
+
+/*
+function answersheet_update_grades($answersheet, $userid=0, $nullifnone=true) {
+    global $CFG;
+    require_once($CFG->libdir.'/gradelib.php');
+
+    if ($answersheet->grade == 0) {
+        answersheet_grade_item_update($answersheet);
+
+    } else if ($grades = answersheet_get_user_grades($answersheet, $userid)) {
+        answersheet_grade_item_update($answersheet, $grades);
+
+    } else if ($userid and $nullifnone) {
+        $grade = new stdClass();
+        $grade->userid   = $userid;
+        $grade->rawgrade = null;
+        answersheet_grade_item_update($answersheet, $grade);
+
+    } else {
+        answersheet_grade_item_update($answersheet);
+    }
+} */
 
 /* File API */
 
@@ -446,4 +472,48 @@ function answersheet_extend_navigation(navigation_node $navref, stdClass $course
  */
 function answersheet_extend_settings_navigation(settings_navigation $settingsnav, navigation_node $answersheetnode=null) {
     // TODO Delete this function and its docblock, or implement it.
+}
+
+/**
+ * Obtains the automatic completion state for this feedback based on the condition
+ * in feedback settings.
+ *
+ * @param object $course Course
+ * @param object $cm Course-module
+ * @param int $userid User ID
+ * @param bool $type Type of comparison (or/and; can be used as return value if no conditions)
+ * @return bool True if completed, false if not, $type if conditions not set.
+ */
+function answersheet_get_completion_state($course, $cm, $userid, $type) {
+    global $CFG, $DB;
+
+    $answersheet = $DB->get_record('answersheet', array('id' => $cm->instance), '*', MUST_EXIST);
+    if (!$answersheet->completionsubmit && !$answersheet->completionpass) {
+        return $type;
+    }
+
+    // If completion option is enabled, evaluate it and return true/false
+    if ($answersheet->completionsubmit) {
+        $params = array('userid' => $userid, 'answersheetid' => $answersheet->id);
+        if (!$DB->record_exists_select('answersheet_attempt',
+                'userid = :userid AND answersheetid = :answersheetid AND timecompleted IS NOT NULL',
+                $params)) {
+            return false;
+        }
+    }
+
+    // Check for passing grade.
+    if ($answersheet->completionpass) {
+        require_once($CFG->libdir . '/gradelib.php');
+        $item = grade_item::fetch(array('courseid' => $course->id, 'itemtype' => 'mod',
+                'itemmodule' => 'answersheet', 'iteminstance' => $cm->instance, 'outcomeid' => null));
+        if ($item) {
+            $grades = grade_grade::fetch_users_grades($item, array($userid), false);
+            if (!empty($grades[$userid])) {
+                return $grades[$userid]->is_passed($item);
+            }
+        }
+    }
+
+    return false;
 }

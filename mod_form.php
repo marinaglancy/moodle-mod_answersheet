@@ -84,4 +84,31 @@ class mod_answersheet_mod_form extends moodleform_mod {
         // Add standard buttons, common to all modules.
         $this->add_action_buttons();
     }
+
+    /**
+     * Display module-specific activity completion rules.
+     * Part of the API defined by moodleform_mod
+     * @return array Array of string IDs of added items, empty array if none
+     */
+    public function add_completion_rules() {
+        $mform = $this->_form;
+
+        $mform->addElement('advcheckbox', 'completionsubmit', null,
+                get_string('completionsubmit', 'answersheet'));
+
+        $mform->addElement('advcheckbox', 'completionpass', null, get_string('completionpass', 'answersheet'));
+        $mform->addHelpButton('completionpass', 'completionpass', 'answersheet');
+
+        return array('completionsubmit', 'completionpass');
+    }
+
+    /**
+     * Called during validation. Indicates whether a module-specific completion rule is selected.
+     *
+     * @param array $data Input data (not yet validated)
+     * @return bool True if one or more rules is enabled, false if none are.
+     */
+    public function completion_rule_enabled($data) {
+        return !empty($data['completionpass']) || !empty($data['completionsubmit']);
+    }
 }

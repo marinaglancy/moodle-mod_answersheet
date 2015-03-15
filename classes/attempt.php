@@ -99,19 +99,58 @@ class mod_answersheet_attempt {
         return null;
     }
 
+    /**
+     *
+     * @global moodle_database $DB
+     * @param cm_info $cm
+     * @param stdClass $answersheet
+     * @return array
+     */
     public static function get_user_attempts($cm, $answersheet) {
         global $DB, $USER;
         if (!array_key_exists($cm->id, self::$userattempts)) {
             $records = $DB->get_records('answersheet_attempt',
                     array('userid' => $USER->id,
                         'answersheetid' => $answersheet->id
-                        ));
+                        ), 'timestarted');
             self::$userattempts[$cm->id] = array();
             foreach ($records as $record) {
                 self::$userattempts[$cm->id][] = new self($record, $cm, $answersheet);
             }
         }
         return self::$userattempts[$cm->id];
+    }
+
+    public static function get_last_completed_attempt_grade($answersheet, $userid) {
+        global $DB;
+        if (!$answersheet->grade) {
+            // Not graded.
+            return null;
+        }
+        $rs = $DB->get_recordset_sql('SELECT userid AS id, userid, grade AS rawgrade '.
+                'FROM {answersheet_attempt} '.
+                'WHERE answersheetid=:aid AND timecompleted IS NOT NULL '.
+                ($userid ? ' AND userid=:userid ' : '').
+                'ORDER BY userid, timestarted DESC, id DESC',
+                array('userid' => $userid, 'aid' => $answersheet->id));
+        $rv = array();
+        foreach ($rs as $record) {
+            // This will return the array with one (last) attempt grade per user.
+            if (!isset($rv[$record->id])) {
+                if ($answersheet->grade > 0) {
+                    $record->rawgrade = $record->rawgrade * $answersheet->grade;
+                } else {
+                    // TODO get scale ...
+                }
+
+                $rv[$record->id] = $record;
+            }
+        }
+        $rs->close();
+        if ($userid && empty($rv)) {
+            return array($userid => null);
+        }
+        return $rv;
     }
 
     public static function parse_options($value) {
@@ -123,7 +162,7 @@ class mod_answersheet_attempt {
     }
 
     protected function save($rawanswers, $finish = true) {
-        global $DB;
+        global $DB, $CFG;
         $answers = array();
         $missed = false;
         for ($i=0; $i<$this->answersheet->questionscount; $i++) {
@@ -141,6 +180,15 @@ class mod_answersheet_attempt {
             $record['grade'] = self::get_grade($answers);
         }
         $DB->update_record('answersheet_attempt', $record);
+
+        if ($finish) {
+            answersheet_update_grades($this->answersheet, $this->attempt->userid);
+
+            // Update completion state
+            require_once($CFG->libdir.'/completionlib.php');
+            $completion = new completion_info($this->cm->get_course());
+            $completion->update_state($this->cm, COMPLETION_COMPLETE);
+        }
     }
 
     protected function get_grade($answers) {
@@ -161,7 +209,11 @@ class mod_answersheet_attempt {
             self::save(!empty($data->q) ? $data->q : array(), isset($data->submitbutton));
             redirect(new moodle_url('/mod/answersheet/view.php', array('id' => $this->cm->id)));
         } else {
+            ob_start();
             $form->display();
+            $contents = ob_get_contents();
+            ob_end_clean();
+            return $contents;
         }
     }
 }

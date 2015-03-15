@@ -29,6 +29,7 @@
 
 require_once(dirname(dirname(dirname(__FILE__))).'/config.php');
 require_once(dirname(__FILE__).'/lib.php');
+require_once($CFG->libdir.'/completionlib.php');
 
 $id = optional_param('id', 0, PARAM_INT); // Course_module ID, or
 $a  = optional_param('a', 0, PARAM_INT);  // ... answersheet instance ID - it should be named as the first character of the module.
@@ -76,6 +77,33 @@ if (($attempt === 'new') && mod_answersheet_attempt::can_start($PAGE->cm, $answe
     redirect($url);
 }
 
+
+// Update 'viewed' state if required by completion system
+$completion = new completion_info($course);
+$completion->set_module_viewed($PAGE->cm);
+
+$contents = '';
+
+if (((int)$attempt) > 0) {
+    $attemptobj = mod_answersheet_attempt::get((int)$attempt, $PAGE->cm, $answersheet);
+    $contents .= $attemptobj->display();
+} else {
+    $attempts = mod_answersheet_attempt::get_user_attempts($PAGE->cm, $answersheet);
+    foreach ($attempts as $attempt) {
+        $url = new moodle_url('/mod/answersheet/view.php', array('id' => $id, 'attempt' => $attempt->id));
+        if ($attempt->attempt->timecompleted) {
+            $contents .= html_writer::link($url, 'Review attempt '.$attempt->id.' - '.
+                    round(100.0 * $attempt->attempt->grade, 2).'%').'<br/>'; // TODO string
+        } else {
+            $contents .= html_writer::link($url, 'Continue attempt '.$attempt->id).'<br/>'; // TODO string
+        }
+    }
+    if (mod_answersheet_attempt::can_start($PAGE->cm, $answersheet)) {
+        $url = new moodle_url('/mod/answersheet/view.php', array('id' => $id, 'attempt' => 'new'));
+        $contents .= html_writer::link($url, 'Start new attempt'); // TODO string
+    }
+}
+
 // Output starts here.
 echo $OUTPUT->header();
 
@@ -84,28 +112,7 @@ if ($answersheet->intro) {
     echo $OUTPUT->box(format_module_intro('answersheet', $answersheet, $cm->id), 'generalbox mod_introbox', 'answersheetintro');
 }
 
-// Replace the following lines with you own code.
-//echo $OUTPUT->heading('Yay! It works!');
-
-if (((int)$attempt) > 0) {
-    $attemptobj = mod_answersheet_attempt::get((int)$attempt, $PAGE->cm, $answersheet);
-    $attemptobj->display();
-} else {
-    $attempts = mod_answersheet_attempt::get_user_attempts($PAGE->cm, $answersheet);
-    foreach ($attempts as $attempt) {
-        $url = new moodle_url('/mod/answersheet/view.php', array('id' => $id, 'attempt' => $attempt->id));
-        if ($attempt->attempt->timecompleted) {
-            echo html_writer::link($url, 'Review attempt '.$attempt->id.' - '.
-                    round(100.0 * $attempt->attempt->grade, 2).'%').'<br/>'; // TODO string
-        } else {
-            echo html_writer::link($url, 'Continue attempt '.$attempt->id).'<br/>'; // TODO string
-        }
-    }
-    if (mod_answersheet_attempt::can_start($PAGE->cm, $answersheet)) {
-        $url = new moodle_url('/mod/answersheet/view.php', array('id' => $id, 'attempt' => 'new'));
-        echo html_writer::link($url, 'Start new attempt'); // TODO string
-    }
-}
+echo $contents;
 
 // Finish the page.
 echo $OUTPUT->footer();
