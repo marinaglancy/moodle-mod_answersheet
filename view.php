@@ -91,21 +91,20 @@ if (((int)$attempt) > 0) {
     }
 } else {
     $attempts = mod_answersheet_attempt::get_user_attempts($PAGE->cm, $answersheet);
-    foreach ($attempts as $attempt) {
+    if ($attempt = mod_answersheet_attempt::find_incomplete_attempt($PAGE->cm, $answersheet)) {
         $url = new moodle_url('/mod/answersheet/view.php', array('id' => $id, 'attempt' => $attempt->id));
-        if ($attempt->attempt->timecompleted) {
-            $contents .= html_writer::link($url, 'Review attempt '.$attempt->id.' - '.
-                    round(100.0 * $attempt->attempt->grade, 2).'%').'<br/>'; // TODO string
-        } else {
-            $contents .= html_writer::link($url, 'Continue attempt '.$attempt->id).'<br/>'; // TODO string
-        }
+        $contents .= html_writer::tag('div', html_writer::link($url, 'Continue attempt'), // TODO string
+                array('class' => 'continueattempt'));
     }
     if (mod_answersheet_attempt::can_start($PAGE->cm, $answersheet)) {
         $url = new moodle_url('/mod/answersheet/view.php', array('id' => $id, 'attempt' => 'new'));
-        $contents .= html_writer::link($url, 'Start new attempt'); // TODO string
+        $contents .= html_writer::tag('div', html_writer::link($url, 'Start new attempt'), // TODO string
+                array('class' => 'startattempt'));
     }
     if (has_capability('mod/answersheet:viewreports', $PAGE->context)) {
         $contents .= mod_answersheet_report::display($cm, $answersheet);
+    } else {
+        $contents .= mod_answersheet_report::display($cm, $answersheet, $USER->id);
     }
 }
 

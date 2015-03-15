@@ -122,12 +122,31 @@ class mod_answersheet_attempt {
         return self::$userattempts[$cm->id];
     }
 
+    public static function get_scale($scaleid, $grade){
+        global $DB;
+        static $scales = array();
+        if (!array_key_exists($scaleid, $scales)) {
+            if ($scale = $DB->get_record('scale', array('id' => $scaleid))) {
+                $scales[$scaleid] = make_menu_from_list($scale->scale);
+            } else {
+                $scales[$scaleid] = null;
+            }
+        }
+        if ($scales[$scaleid]) {
+            return $scales[$scaleid][$grade];
+        } else {
+            return '-';
+        }
+    }
+
     /**
      * Get the primary grade item for this module instance.
      *
      * @return stdClass The grade_item record
      */
     public static function get_grade_item($course, $instanceid) {
+        global $CFG;
+        require_once($CFG->libdir.'/gradelib.php');
         static $items = array();
         if (!array_key_exists($instanceid, $items)) {
             $params = array('itemtype' => 'mod',
@@ -138,6 +157,23 @@ class mod_answersheet_attempt {
             $items[$instanceid] = grade_item::fetch($params);
         }
         return $items[$instanceid];
+    }
+
+    public static function convert_grade($answersheet, $floatgrade, $human = false) {
+        if ($answersheet->grade > 0) {
+            $rv = $floatgrade * $answersheet->grade;
+            if ($human) {
+                $rv = round($rv, 2) .' / '.$answersheet->grade;
+            }
+        } else {
+            $gradeitem = self::get_grade_item($answersheet->course, $answersheet->id);
+            $rv = round($floatgrade *
+                    ($gradeitem->grademax - $gradeitem->grademin) + $gradeitem->grademin, 0);
+            if ($human) {
+                $rv = self::get_scale(-$answersheet->grade, $rv);
+            }
+        }
+        return $rv;
     }
 
     public static function get_last_completed_attempt_grade($answersheet, $userid) {
