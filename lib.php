@@ -360,28 +360,6 @@ function answersheet_update_grades(stdClass $answersheet, $userid = 0) {
     grade_update('mod/answersheet', $answersheet->course, 'mod', 'answersheet', $answersheet->id, 0, $grades);
 }
 
-/*
-function answersheet_update_grades($answersheet, $userid=0, $nullifnone=true) {
-    global $CFG;
-    require_once($CFG->libdir.'/gradelib.php');
-
-    if ($answersheet->grade == 0) {
-        answersheet_grade_item_update($answersheet);
-
-    } else if ($grades = answersheet_get_user_grades($answersheet, $userid)) {
-        answersheet_grade_item_update($answersheet, $grades);
-
-    } else if ($userid and $nullifnone) {
-        $grade = new stdClass();
-        $grade->userid   = $userid;
-        $grade->rawgrade = null;
-        answersheet_grade_item_update($answersheet, $grade);
-
-    } else {
-        answersheet_grade_item_update($answersheet);
-    }
-} */
-
 /* File API */
 
 /**
@@ -458,9 +436,9 @@ function answersheet_pluginfile($course, $cm, $context, $filearea, array $args, 
  * @param stdClass $module current answersheet instance record
  * @param cm_info $cm course module information
  */
-function answersheet_extend_navigation(navigation_node $navref, stdClass $course, stdClass $module, cm_info $cm) {
+//function answersheet_extend_navigation(navigation_node $navref, stdClass $course, stdClass $module, cm_info $cm) {
     // TODO Delete this function and its docblock, or implement it.
-}
+//}
 
 /**
  * Extends the settings navigation with the answersheet settings
