@@ -99,10 +99,11 @@ if (((int)$attempt) > 0) {
     if (has_capability('mod/answersheet:viewreports', $PAGE->context)) {
         // View all attempts.
         $userid = optional_param('userid', 0, PARAM_INT);
-        $contents .= mod_answersheet_report::display($cm, $answersheet, $userid);
+        $displaytype = optional_param('displaytype', 'completedattempts', PARAM_ALPHA);
+        $contents .= mod_answersheet_report::display($cm, $answersheet, $userid, $displaytype);
     } else {
         // View own past attempts.
-        $contents .= mod_answersheet_report::display($cm, $answersheet, $USER->id);
+        $contents .= mod_answersheet_report::display($cm, $answersheet, $USER->id, 'all');
     }
 }
 

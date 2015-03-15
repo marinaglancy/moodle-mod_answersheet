@@ -40,13 +40,13 @@ class mod_answersheet_report {
      * @param int $userid
      * @return string
      */
-    public static function display($cm, $answersheet, $userid = 0) {
+    public static function display($cm, $answersheet, $userid = 0, $displaytype = 'completedonly') {
         global $OUTPUT, $USER;
-        $attempts = self::get_all_attempts($cm, $answersheet, $userid);
-        if (!$attempts) {
+        $attempts = self::get_all_attempts($cm, $answersheet, $userid, $displaytype);
+        if (!$attempts && $displaytype === 'all') {
             return '';
         }
-        $baseurl = new moodle_url('/mod/answersheet/view.php', array('id' => $cm->id));
+        $baseurl = new moodle_url('/mod/answersheet/view.php', array('id' => $cm->id, 'displaytype' => $displaytype));
         $canviewallusers = has_capability('mod/answersheet:viewreports', context_module::instance($cm->id));
         $table = new html_table();
         $alluserslink = '';
@@ -57,20 +57,18 @@ class mod_answersheet_report {
             get_string('user') . $alluserslink,
             get_string('started', 'answersheet'),
             get_string('grade'),
-            get_string('percentage', 'grades'),
-            get_string('answers', 'answersheet')
+            get_string('percentage', 'grades')
         );
         if ($userid && !$canviewallusers) {
             array_shift($table->head);
         }
         foreach ($attempts as $attempt) {
             $attempturl = new moodle_url($baseurl, array('attempt' => $attempt->id));
-            $userurl = new moodle_url($baseurl, array('userid' => $attempt->userid));
+            $userurl = new moodle_url($baseurl, array('userid' => $attempt->userid, 'displaytype' => 'allattempts'));
             $data = array(html_writer::link($userurl, fullname($attempt)),
                 html_writer::link($attempturl, userdate($attempt->timestarted, get_string('strftimedatetime', 'core_langconfig'))),
-                mod_answersheet_attempt::convert_grade($answersheet, $attempt->grade, true),
-                round($attempt->grade * 100, 2).'%',
-                $attempt->answers);
+                $attempt->timecompleted ? mod_answersheet_attempt::convert_grade($answersheet, $attempt->grade, true) : '',
+                $attempt->timecompleted ? (round($attempt->grade * 100, 2).'%') : '');
             if ($userid && !$canviewallusers) {
                 array_shift($data);
             }
@@ -81,8 +79,41 @@ class mod_answersheet_report {
             }
             $table->data[] = $data;
         }
-        return $OUTPUT->heading(get_string('completedattempts', 'answersheet'), 3).
+        return self::get_tabs($cm, $userid, $displaytype).
             html_writer::table($table);
+    }
+
+    protected static function get_tabs($cm, $userid, $displaytype) {
+        global $OUTPUT;
+
+        if ($displaytype === 'all') {
+            return $OUTPUT->heading(get_string('attemptsummary', 'answersheet'), 3);
+        }
+
+        $baseurl = new moodle_url('/mod/answersheet/view.php', array('id' => $cm->id));
+        if ($userid) {
+            $baseurl->param('userid', $userid);
+        }
+        $tabs = array();
+
+        $completedurl = new moodle_url($baseurl);
+        $completedlabel = get_string('completedattempts', 'answersheet');
+        $tabs[] = new tabobject('completedattempts', $completedurl, $completedlabel, $completedlabel, false);
+
+        $lasturl = new moodle_url($baseurl, array('displaytype' => 'lastattempts'));
+        $lastlabel = get_string('lastattempts', 'answersheet');
+        $tabs[] = new tabobject('lastattempts', $lasturl, $lastlabel, $lastlabel, false);
+
+        $allurl = new moodle_url($baseurl, array('displaytype' => 'allattempts'));
+        $alllabel = get_string('allattempts', 'answersheet');
+        $tabs[] = new tabobject('allattempts', $allurl, $alllabel, $alllabel, false);
+
+        $currenturl = new moodle_url($baseurl, array('displaytype' => 'currentattempts'));
+        $currentlabel = get_string('currentattempts', 'answersheet');
+        $tabs[] = new tabobject('currentattempts', $currenturl, $currentlabel, $currentlabel, false);
+
+        return print_tabs(array($tabs), $displaytype, null, null, true);
+
     }
 
     /**
@@ -94,7 +125,7 @@ class mod_answersheet_report {
      * @param bool $completedonly
      * @return array
      */
-    protected static function get_all_attempts($cm, $answersheet, $userid = 0, $completedonly = true) {
+    protected static function get_all_attempts($cm, $answersheet, $userid = 0, $displaytype = 'completedattempts') {
         global $DB;
         $namefields = get_all_user_name_fields(true, 'u');
         $records = $DB->get_records_sql(
@@ -103,7 +134,9 @@ class mod_answersheet_report {
                 'FROM {answersheet_attempt} a LEFT JOIN {user} u ON u.id = a.userid '.
                 'WHERE answersheetid = :aid '.
                 ($userid ? 'AND a.userid = :userid ' : '').
-                ($completedonly ? 'AND timecompleted IS NOT NULL ' : '').
+                (($displaytype == 'completedattempts') ? 'AND timecompleted IS NOT NULL ' : '').
+                (($displaytype == 'lastattempts') ? 'AND islast = 1 ' : '').
+                (($displaytype == 'currentattempts') ? 'AND timecompleted IS NULL ' : '').
                 'ORDER BY timestarted, id',
                 array('aid' => $answersheet->id, 'userid' => $userid));
         $rv = array();

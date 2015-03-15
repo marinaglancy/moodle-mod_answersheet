@@ -27,12 +27,14 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['allattempts'] = 'All attempts';
 $string['answers'] = 'Answers';
 $string['answersheetfieldset'] = 'Questions details';
 $string['answersheetname'] = 'Activity name';
 $string['answersheet'] = 'Answersheet';
 $string['answerslist'] = 'List of answers';
 $string['answerslist_help'] = 'Comma-separated list of correct answers. Newlines and comments will be ignored';
+$string['attemptsummary'] = 'Summary of attempts';
 $string['completedattempts'] = 'Completed attempts';
 $string['continueattempt'] = 'Continue attempt';
 $string['correct'] = 'Correct';
@@ -40,11 +42,13 @@ $string['completed'] = 'Completed';
 $string['completionpass'] = 'Require passing grade';
 $string['completionpass_help'] = 'If enabled, this activity is considered complete when the student receives a passing grade, with the pass grade set in the gradebook.';
 $string['completionsubmit'] = 'View as completed if the answers are submitted';
+$string['currentattempts'] = 'Attempts in progress';
 $string['error_questionscount'] = 'Enter the number of questions';
 $string['error_questionsoptions'] = 'Specify between 2 and {$a} unique options';
 $string['error_answerslist_mismatch'] = 'Number of answers in this list must match number of questions';
 $string['error_answerslist_invalid'] = 'List of correct answers includes invalid value(s): {$a}';
 $string['finish'] = 'Submit and finish';
+$string['lastattempts'] = 'Last completed attempts';
 $string['modulename'] = 'Answersheet';
 $string['modulenameplural'] = 'Answersheets';
 $string['modulename_help'] = 'Use to record students test answers on the answer sheet';
