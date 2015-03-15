@@ -1,3 +1,4 @@
 moodle-mod_answersheet
 
-Simple module to display only test answer sheet to the students
+Display test answer sheet to the students, allow to take several
+attempts. Attempts are graded immediately.

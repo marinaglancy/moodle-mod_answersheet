@@ -292,8 +292,12 @@ class mod_answersheet_attempt {
         $record = array('id' => $this->attempt->id,
                     'answers' => join(',', $answers));
         if ($finish) {
+            $DB->execute('UPDATE {answersheet_attempt} SET islast = ? '.
+                    'WHERE answersheetid = ? AND userid = ? AND islast = ?',
+                    array(0, $this->answersheet->id, $this->attempt->userid, 1));
             $record['timecompleted'] = time();
             $record['grade'] = self::get_grade($answers);
+            $record['islast'] = 1;
         }
         $DB->update_record('answersheet_attempt', $record);
 

@@ -41,31 +41,43 @@ class mod_answersheet_report {
      * @return string
      */
     public static function display($cm, $answersheet, $userid = 0) {
-        global $OUTPUT;
+        global $OUTPUT, $USER;
         $attempts = self::get_all_attempts($cm, $answersheet, $userid);
         if (!$attempts) {
             return '';
         }
+        $baseurl = new moodle_url('/mod/answersheet/view.php', array('id' => $cm->id));
+        $canviewallusers = has_capability('mod/answersheet:viewreports', context_module::instance($cm->id));
         $table = new html_table();
+        $alluserslink = '';
+        if ($userid && $canviewallusers) {
+            $alluserslink = '<br>'.html_writer::link($baseurl, get_string('showallusers', 'answersheet'));
+        }
         $table->head = array(
-            get_string('user'),
+            get_string('user') . $alluserslink,
             get_string('started', 'answersheet'),
             get_string('grade'),
             get_string('percentage', 'grades'),
             get_string('answers', 'answersheet')
         );
-        if ($userid) {
+        if ($userid && !$canviewallusers) {
             array_shift($table->head);
         }
         foreach ($attempts as $attempt) {
-            $url = new moodle_url('/mod/answersheet/view.php', array('id' => $cm->id, 'attempt' => $attempt->id));
-            $data = array(fullname($attempt),
-                html_writer::link($url, userdate($attempt->timestarted, get_string('strftimedatetime', 'core_langconfig'))),
+            $attempturl = new moodle_url($baseurl, array('attempt' => $attempt->id));
+            $userurl = new moodle_url($baseurl, array('userid' => $attempt->userid));
+            $data = array(html_writer::link($userurl, fullname($attempt)),
+                html_writer::link($attempturl, userdate($attempt->timestarted, get_string('strftimedatetime', 'core_langconfig'))),
                 mod_answersheet_attempt::convert_grade($answersheet, $attempt->grade, true),
                 round($attempt->grade * 100, 2).'%',
                 $attempt->answers);
-            if ($userid) {
+            if ($userid && !$canviewallusers) {
                 array_shift($data);
+            }
+            if ($attempt->islast) {
+                foreach ($data as $i => $v) {
+                    $data[$i] = html_writer::tag('strong', $v);
+                }
             }
             $table->data[] = $data;
         }
@@ -87,7 +99,7 @@ class mod_answersheet_report {
         $namefields = get_all_user_name_fields(true, 'u');
         $records = $DB->get_records_sql(
                 'SELECT a.id, a.answers, a.timestarted, a.timecompleted, '.
-                'a.grade, a.userid, '.$namefields.' '.
+                'a.grade, a.userid, a.islast, '.$namefields.' '.
                 'FROM {answersheet_attempt} a LEFT JOIN {user} u ON u.id = a.userid '.
                 'WHERE answersheetid = :aid '.
                 ($userid ? 'AND a.userid = :userid ' : '').

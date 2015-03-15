@@ -21,7 +21,7 @@
  * visit: http://docs.moodle.org/en/Development:lib/formslib.php
  *
  * @package    mod_answersheet
- * @copyright  2015 Your Name
+ * @copyright  2015 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -33,7 +33,7 @@ require_once($CFG->dirroot.'/course/moodleform_mod.php');
  * Module instance settings form
  *
  * @package    mod_answersheet
- * @copyright  2015 Your Name
+ * @copyright  2015 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_answersheet_mod_form extends moodleform_mod {
@@ -42,6 +42,7 @@ class mod_answersheet_mod_form extends moodleform_mod {
      * Defines forms elements
      */
     public function definition() {
+        global $CFG;
 
         $mform = $this->_form;
 
@@ -57,23 +58,24 @@ class mod_answersheet_mod_form extends moodleform_mod {
         }
         $mform->addRule('name', null, 'required', null, 'client');
         $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
-        $mform->addHelpButton('name', 'answersheetname', 'answersheet');
 
         // Adding the standard "intro" and "introformat" fields.
         $this->add_intro_editor();
 
         $mform->addElement('header', 'answersheetfieldset', get_string('answersheetfieldset', 'answersheet'));
 
-        $mform->addElement('text', 'questionscount', 'Number of questions');
+        $mform->addElement('text', 'questionscount', get_string('questionscount', 'answersheet'));
         $mform->setType('questionscount', PARAM_INT);
+        $mform->addHelpButton('questionscount', 'questionscount', 'answersheet');
 
-        $mform->addElement('text', 'questionsoptions', 'Questions options');
+        $mform->addElement('text', 'questionsoptions', get_string('questionsoptions', 'answersheet'));
         $mform->setType('questionsoptions', PARAM_NOTAGS);
         $mform->setDefault('questionsoptions', 'A,B,C,D');
+        $mform->addHelpButton('questionsoptions', 'questionsoptions', 'answersheet');
 
-        $mform->addElement('textarea', 'answerslist', 'List of answers');
+        $mform->addElement('textarea', 'answerslist', get_string('answerslist', 'answersheet'));
         $mform->setType('answerslist', PARAM_NOTAGS);
-        //C,C,B,A,B,B,C,D,A,C,C,B,C,C,A,B,C,C,C,C,D,D,A,B,A,D,C,B,A,C,C,A,A,C,B
+        $mform->addHelpButton('answerslist', 'answerslist', 'answersheet');
 
         // Add standard grading elements.
         $this->standard_grading_coursemodule_elements();
@@ -110,5 +112,40 @@ class mod_answersheet_mod_form extends moodleform_mod {
      */
     public function completion_rule_enabled($data) {
         return !empty($data['completionpass']) || !empty($data['completionsubmit']);
+    }
+
+    /**
+     * Form validation
+     *
+     * @param array $data
+     * @param array $files
+     * @return array
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        if (empty($data['questionscount']) || $data['questionscount'] <= 0) {
+            $errors['questionscount'] = get_string('error_questionscount', 'answersheet');
+        }
+
+        $options = mod_answersheet_attempt::parse_options($data['questionsoptions']);
+        if (empty($options) || count($options) != count(array_unique($options)) ||
+                count($options) < 2 || count($options) > 20) {
+            $errors['questionsoptions'] = get_string('error_questionsoptions', 'answersheet', 20);
+        }
+
+        if (empty($errors['questionscount']) && empty($errors['questionsoptions'])) {
+            $answers = mod_answersheet_attempt::parse_answerslist($data['answerslist']);
+            if (count($answers) != $data['questionscount']) {
+                $errors['answerslist'] = get_string('error_answerslist_mismatch', 'answersheet');
+            } else {
+                $extraanswers = array_diff(array_unique($answers), $options);
+                if (!empty($extraanswers)) {
+                    $errors['answerslist'] = get_string('error_answerslist_invalid', 'answersheet',
+                            join(',', $extraanswers));
+                }
+            }
+        }
+        return $errors;
     }
 }

@@ -21,7 +21,7 @@
  * if you like, and it can span multiple lines.
  *
  * @package    mod_answersheet
- * @copyright  2015 Your Name
+ * @copyright  2015 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -98,7 +98,8 @@ if (((int)$attempt) > 0) {
 
     if (has_capability('mod/answersheet:viewreports', $PAGE->context)) {
         // View all attempts.
-        $contents .= mod_answersheet_report::display($cm, $answersheet);
+        $userid = optional_param('userid', 0, PARAM_INT);
+        $contents .= mod_answersheet_report::display($cm, $answersheet, $userid);
     } else {
         // View own past attempts.
         $contents .= mod_answersheet_report::display($cm, $answersheet, $USER->id);

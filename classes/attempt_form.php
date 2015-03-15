@@ -90,8 +90,8 @@ class mod_answersheet_attempt_form extends moodleform {
     function add_abuttons(){
         $mform =& $this->_form;
         $buttonarray=array();
-        $buttonarray[] = &$mform->createElement('submit', 'submitbutton', get_string('submit'));
-        $buttonarray[] = &$mform->createElement('submit', 'saveonly', get_string('save', 'question'));
+        $buttonarray[] = &$mform->createElement('submit', 'submitbutton', get_string('finish', 'answersheet'));
+        $buttonarray[] = &$mform->createElement('submit', 'saveonly', get_string('saveonly', 'answersheet'));
         //$buttonarray[] = &$mform->createElement('cancel');
         $mform->addGroup($buttonarray, 'buttonar', '', array(' '), false);
         $mform->closeHeaderBefore('buttonar');

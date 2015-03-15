@@ -25,7 +25,7 @@
  * here will all be database-neutral, using the functions defined in DLL libraries.
  *
  * @package    mod_answersheet
- * @copyright  2015 Your Name
+ * @copyright  2015 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -42,124 +42,32 @@ function xmldb_answersheet_upgrade($oldversion) {
 
     $dbman = $DB->get_manager(); // Loads ddl manager and xmldb classes.
 
-    if ($oldversion < 2015031401) {
+    if ($oldversion < 2015031504) {
 
-        // Define field questionscount to be added to answersheet.
-        $table = new xmldb_table('answersheet');
-        $field = new xmldb_field('questionscount', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'grade');
-
-        // Conditionally launch add field questionscount.
-        if (!$dbman->field_exists($table, $field)) {
-            $dbman->add_field($table, $field);
-        }
-
-        $field = new xmldb_field('questionsoptions', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, 'A,B,C,D', 'questionscount');
-
-        // Conditionally launch add field questionsoptions.
-        if (!$dbman->field_exists($table, $field)) {
-            $dbman->add_field($table, $field);
-        }
-
-        $field = new xmldb_field('answerslist', XMLDB_TYPE_TEXT, null, null, null, null, null, 'questionsoptions');
-
-        // Conditionally launch add field answerslist.
-        if (!$dbman->field_exists($table, $field)) {
-            $dbman->add_field($table, $field);
-        }
-
-        // Answersheet savepoint reached.
-        upgrade_mod_savepoint(true, 2015031401, 'answersheet');
-    }
-
-    if ($oldversion < 2015031402) {
-
-        // Define table answersheet_attempt to be created.
+        // Define field islast to be added to answersheet_attempt.
         $table = new xmldb_table('answersheet_attempt');
+        $field = new xmldb_field('islast', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'grade');
 
-        // Adding fields to table answersheet_attempt.
-        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
-        $table->add_field('attemptid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
-        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
-        $table->add_field('timestarted', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
-        $table->add_field('timecompleted', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
-        $table->add_field('answers', XMLDB_TYPE_TEXT, null, null, null, null, null);
-        $table->add_field('grade', XMLDB_TYPE_NUMBER, '10, 5', null, null, null, null);
-
-        // Adding keys to table answersheet_attempt.
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
-
-        // Conditionally launch create table for answersheet_attempt.
-        if (!$dbman->table_exists($table)) {
-            $dbman->create_table($table);
-        }
-
-        // Answersheet savepoint reached.
-        upgrade_mod_savepoint(true, 2015031402, 'answersheet');
-    }
-
-    if ($oldversion < 2015031403) {
-
-        // Rename field attemptid on table answersheet_attempt to answersheetid.
-        $table = new xmldb_table('answersheet_attempt');
-        $field = new xmldb_field('attemptid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'id');
-
-        // Launch rename field attemptid.
-        $dbman->rename_field($table, $field, 'answersheetid');
-
-        // Answersheet savepoint reached.
-        upgrade_mod_savepoint(true, 2015031403, 'answersheet');
-    }
-
-    if ($oldversion < 2015031404) {
-
-        // Define field completionsubmit to be added to answersheet.
-        $table = new xmldb_table('answersheet');
-        $field = new xmldb_field('completionsubmit', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'answerslist');
-
-        // Conditionally launch add field completionsubmit.
+        // Conditionally launch add field islast.
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
+
         }
 
-        $field = new xmldb_field('completionpass', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'completionsubmit');
-
-        // Conditionally launch add field completionpass.
-        if (!$dbman->field_exists($table, $field)) {
-            $dbman->add_field($table, $field);
-        }
-
-        // Answersheet savepoint reached.
-        upgrade_mod_savepoint(true, 2015031404, 'answersheet');
-    }
-
-    if ($oldversion < 2015031405) {
-
-        // Rename field attemptid on table answersheet_attempt to answersheetid.
-        $table = new xmldb_table('answersheet_attempt');
-        $field = new xmldb_field('attemptid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'id');
-
-        // Launch rename field attemptid.
-        if ($dbman->field_exists($table, $field)) {
-            $dbman->rename_field($table, $field, 'answersheetid');
+        $records = $DB->get_records_select('answersheet_attempt',
+                'timecompleted IS NOT NULL', array(),
+                'userid, timestarted DESC, id DESC',
+                'id, answersheetid, userid');
+        $processed = array();
+        foreach ($records as $record) {
+            if (!in_array($record->answersheetid.'-'.$record->userid, $processed)) {
+                $DB->update_record('answersheet_attempt', array('id' => $record->id, 'islast' => 1));
+                $processed[] = $record->answersheetid.'-'.$record->userid;
+            }
         }
 
         // Answersheet savepoint reached.
-        upgrade_mod_savepoint(true, 2015031405, 'answersheet');
-    }
-
-    if ($oldversion < 2015031406) {
-
-        // Define index answshuser (not unique) to be added to answersheet_attempt.
-        $table = new xmldb_table('answersheet_attempt');
-        $index = new xmldb_index('answshuser', XMLDB_INDEX_NOTUNIQUE, array('answersheetid', 'userid'));
-
-        // Conditionally launch add index answshuser.
-        if (!$dbman->index_exists($table, $index)) {
-            $dbman->add_index($table, $index);
-        }
-
-        // Answersheet savepoint reached.
-        upgrade_mod_savepoint(true, 2015031406, 'answersheet');
+        upgrade_mod_savepoint(true, 2015031504, 'answersheet');
     }
 
     return true;

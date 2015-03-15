@@ -40,7 +40,7 @@
  * The variable name for the capability definitions array is $capabilities
  *
  * @package    mod_answersheet
- * @copyright  2015 Your Name
+ * @copyright  2015 Marina Glancy
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -79,7 +79,6 @@ $capabilities = array(
         )
     ),
 
-    // View the quiz reports.
     'mod/answersheet:viewreports' => array(
         'riskbitmask' => RISK_PERSONAL,
         'captype' => 'read',
