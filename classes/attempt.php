@@ -344,7 +344,7 @@ class mod_answersheet_attempt {
                 userdate($this->attempt->timestarted, get_string('strftimedatetime', 'core_langconfig')));
         if ($this->attempt->timecompleted) {
             $contents .= html_writer::tag('li', get_string('completed', 'answersheet') . ': ' .
-                    userdate($this->attempt->timestarted, get_string('strftimedatetime', 'core_langconfig')));
+                    userdate($this->attempt->timecompleted, get_string('strftimedatetime', 'core_langconfig')));
             $contents .= html_writer::tag('li', get_string('grade') . ': ' .
                     self::convert_grade($this->answersheet, $this->attemptgrade, true));
             $contents .= html_writer::tag('li', get_string('percentage', 'grades') . ': ' .
