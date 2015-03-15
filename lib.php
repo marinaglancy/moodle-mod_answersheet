@@ -138,6 +138,7 @@ function answersheet_delete_instance($id) {
     // Delete any dependent records here.
 
     $DB->delete_records('answersheet', array('id' => $answersheet->id));
+    $DB->delete_records('answersheet_attempt', array('answersheetid' => $answersheet->id));
 
     answersheet_grade_item_delete($answersheet);
 

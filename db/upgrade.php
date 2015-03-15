@@ -139,10 +139,27 @@ function xmldb_answersheet_upgrade($oldversion) {
         $field = new xmldb_field('attemptid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'id');
 
         // Launch rename field attemptid.
-        $dbman->rename_field($table, $field, 'answersheetid');
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->rename_field($table, $field, 'answersheetid');
+        }
 
         // Answersheet savepoint reached.
         upgrade_mod_savepoint(true, 2015031405, 'answersheet');
+    }
+
+    if ($oldversion < 2015031406) {
+
+        // Define index answshuser (not unique) to be added to answersheet_attempt.
+        $table = new xmldb_table('answersheet_attempt');
+        $index = new xmldb_index('answshuser', XMLDB_INDEX_NOTUNIQUE, array('answersheetid', 'userid'));
+
+        // Conditionally launch add index answshuser.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Answersheet savepoint reached.
+        upgrade_mod_savepoint(true, 2015031406, 'answersheet');
     }
 
     return true;

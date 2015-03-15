@@ -40,6 +40,9 @@
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
+      <INDEXES>
+        <INDEX NAME="answshuser" UNIQUE="false" FIELDS="answersheetid, userid"/>
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

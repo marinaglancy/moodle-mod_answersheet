@@ -121,6 +121,24 @@ class mod_answersheet_attempt {
         return self::$userattempts[$cm->id];
     }
 
+    /**
+     * Get the primary grade item for this module instance.
+     *
+     * @return stdClass The grade_item record
+     */
+    public static function get_grade_item($course, $instanceid) {
+        static $items = array();
+        if (!array_key_exists($instanceid, $items)) {
+            $params = array('itemtype' => 'mod',
+                            'itemmodule' => 'answersheet',
+                            'iteminstance' => $instanceid,
+                            'courseid' => $course,
+                            'itemnumber' => 0);
+            $items[$instanceid] = grade_item::fetch($params);
+        }
+        return $items[$instanceid];
+    }
+
     public static function get_last_completed_attempt_grade($answersheet, $userid) {
         global $DB;
         if (!$answersheet->grade) {
@@ -140,7 +158,9 @@ class mod_answersheet_attempt {
                 if ($answersheet->grade > 0) {
                     $record->rawgrade = $record->rawgrade * $answersheet->grade;
                 } else {
-                    // TODO get scale ...
+                    $gradeitem = self::get_grade_item($answersheet->course, $answersheet->id);
+                    $record->rawgrade = round($record->rawgrade *
+                            ($gradeitem->grademax - $gradeitem->grademin) + $gradeitem->grademin, 0);
                 }
 
                 $rv[$record->id] = $record;
