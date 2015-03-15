@@ -132,5 +132,18 @@ function xmldb_answersheet_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2015031404, 'answersheet');
     }
 
+    if ($oldversion < 2015031405) {
+
+        // Rename field attemptid on table answersheet_attempt to answersheetid.
+        $table = new xmldb_table('answersheet_attempt');
+        $field = new xmldb_field('attemptid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'id');
+
+        // Launch rename field attemptid.
+        $dbman->rename_field($table, $field, 'answersheetid');
+
+        // Answersheet savepoint reached.
+        upgrade_mod_savepoint(true, 2015031405, 'answersheet');
+    }
+
     return true;
 }
