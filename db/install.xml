@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/answersheet/db" VERSION="20150315" COMMENT="XMLDB file for Moodle mod/answersheet"
+<XMLDB PATH="mod/answersheet/db" VERSION="20170806" COMMENT="XMLDB file for Moodle mod/answersheet"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -17,6 +17,8 @@
         <FIELD NAME="questionscount" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="questionsoptions" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="A,B,C,D" SEQUENCE="false"/>
         <FIELD NAME="answerslist" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="explanations" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="explanationsformat" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="completionsubmit" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="completionpass" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>

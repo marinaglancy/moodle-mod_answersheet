@@ -390,6 +390,12 @@ class mod_answersheet_attempt {
         }
         $contents .= $form->render();
         if ($finish) {
+            if ($a->percentage < 100 && !empty($this->answersheet->explanations)) {
+                $options = array('maxfiles' => EDITOR_UNLIMITED_FILES, 'context' => $this->cm->context);
+                $explanations = file_rewrite_pluginfile_urls($this->answersheet->explanations, 'pluginfile.php',
+                    $this->cm->context->id, 'mod_answersheet', 'explanations', 0);
+                $contents .= trim(format_text($explanations, $this->answersheet->explanationsformat, $options));
+            }
             $contents .= $OUTPUT->continue_button($this->cm->url);
         }
         return $contents;

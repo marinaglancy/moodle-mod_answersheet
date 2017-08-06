@@ -28,8 +28,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_answersheet';
-$plugin->version = 2015031504;
-$plugin->release = 'v1.0';
+$plugin->version = 2017080601;
+$plugin->release = 'v2.0';
 $plugin->requires = 2014051200;
 $plugin->maturity = MATURITY_STABLE;
 $plugin->cron = 0;

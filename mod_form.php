@@ -77,6 +77,10 @@ class mod_answersheet_mod_form extends moodleform_mod {
         $mform->setType('answerslist', PARAM_NOTAGS);
         $mform->addHelpButton('answerslist', 'answerslist', 'answersheet');
 
+        $mform->addElement('editor', 'explanations_editor', get_string('explanations', 'answersheet'),
+            array('rows' => 10), array('maxfiles' => EDITOR_UNLIMITED_FILES, 'context' => $this->context));
+        $mform->addHelpButton('explanations_editor', 'explanations', 'answersheet');
+
         // Add standard grading elements.
         $this->standard_grading_coursemodule_elements();
 
@@ -85,6 +89,20 @@ class mod_answersheet_mod_form extends moodleform_mod {
 
         // Add standard buttons, common to all modules.
         $this->add_action_buttons();
+    }
+
+    public function data_preprocessing(&$default_values) {
+
+        $context = $this->context;
+        if ($this->context && $this->context->contextlevel != CONTEXT_MODULE) {
+            $context = null;
+        }
+        $data = file_prepare_standard_editor((object)$default_values, 'explanations',
+            array('maxfiles' => EDITOR_UNLIMITED_FILES, 'context' => $context),
+            $context,
+            'mod_answersheet', 'explanations', 0);
+        $default_values = (array)$data;
+
     }
 
     /**
