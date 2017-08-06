@@ -289,15 +289,16 @@ class mod_answersheet_attempt {
                 $missed = true;
             }
         }
+        $this->attempt->answers = join(',', $answers);
         $record = array('id' => $this->attempt->id,
-                    'answers' => join(',', $answers));
+                    'answers' => $this->attempt->answers);
         if ($finish) {
             $DB->execute('UPDATE {answersheet_attempt} SET islast = ? '.
                     'WHERE answersheetid = ? AND userid = ? AND islast = ?',
                     array(0, $this->answersheet->id, $this->attempt->userid, 1));
-            $record['timecompleted'] = time();
-            $record['grade'] = self::get_grade($answers);
-            $record['islast'] = 1;
+            $record['timecompleted'] = $this->attempt->timecompleted = time();
+            $record['grade'] = $this->attempt->grade = self::get_grade($answers);
+            $record['islast'] = $this->attempt->islast = 1;
         }
         $DB->update_record('answersheet_attempt', $record);
 
@@ -346,7 +347,7 @@ class mod_answersheet_attempt {
             $contents .= html_writer::tag('li', get_string('completed', 'answersheet') . ': ' .
                     userdate($this->attempt->timecompleted, get_string('strftimedatetime', 'core_langconfig')));
             $contents .= html_writer::tag('li', get_string('grade') . ': ' .
-                    self::convert_grade($this->answersheet, $this->attemptgrade, true));
+                    self::convert_grade($this->answersheet, $this->attempt->grade, true));
             $contents .= html_writer::tag('li', get_string('percentage', 'grades') . ': ' .
                     round($this->attempt->grade * 100, 2).'%');
         }
@@ -361,16 +362,28 @@ class mod_answersheet_attempt {
         $form = new mod_answersheet_attempt_form(null, (object)array('attempt' => $this));
         $q = preg_split('/,/', $this->attempt->answers);
         $form->set_data(array('q' => $q));
+        $finish = false;
         if ($data = $form->get_data()) {
-            self::save(!empty($data->q) ? $data->q : array(), isset($data->submitbutton));
-            redirect(new moodle_url('/mod/answersheet/view.php', array('id' => $this->cm->id)));
-        } else {
-            $contents = $this->attempt_info();
-            ob_start();
-            $form->display();
-            $contents .= ob_get_contents();
-            ob_end_clean();
-            return $contents;
+            $finish = isset($data->submitbutton);
+            self::save(!empty($data->q) ? $data->q : array(), $finish);
+            $form = new mod_answersheet_attempt_form(null, (object)array('attempt' => $this));
+
+            if (!$finish) {
+                redirect(new moodle_url('/mod/answersheet/view.php', array('id' => $this->cm->id)));
+            }
         }
+        $contents = '';
+        if ($finish) {
+            $a = (object)[
+                'grade' => self::convert_grade($this->answersheet, $this->attempt->grade, true),
+                'percentage' => round($this->attempt->grade * 100, 2)
+            ];
+            $notification = get_string('yourgrade', 'mod_answersheet', $a);
+            core\notification::add($notification, \core\output\notification::NOTIFY_INFO);
+        } else {
+            $contents .= $this->attempt_info();
+        }
+        $contents .= $form->render();
+        return $contents;
     }
 }

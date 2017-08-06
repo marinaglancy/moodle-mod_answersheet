@@ -62,4 +62,5 @@ $string['saveonly'] = 'Save to continue later';
 $string['showallusers'] = 'Show all users';
 $string['started'] = 'Started';
 $string['startnerattempt'] = 'Start new attempt';
+$string['yourgrade'] = 'Your grade is {$a->grade} ({$a->percentage}%)';
 $string['wrong'] = 'Wrong';
