@@ -49,13 +49,9 @@ $PAGE->set_activity_record($answersheet);
 
 $attempt = optional_param('attempt', null, PARAM_NOTAGS);
 
-$event = \mod_answersheet\event\course_module_viewed::create(array(
-    'objectid' => $PAGE->cm->instance,
-    'context' => $PAGE->context,
-));
-$event->add_record_snapshot('course', $PAGE->course);
-$event->add_record_snapshot($PAGE->cm->modname, $answersheet);
-$event->trigger();
+if (!$attempt) {
+    $event = \mod_answersheet\event\course_module_viewed::create_from_cm($PAGE->cm, $answersheet, $PAGE->course)->trigger();
+}
 
 $PAGE->set_url('/mod/answersheet/view.php', array('id' => $cm->id));
 $PAGE->set_title(format_string($answersheet->name));

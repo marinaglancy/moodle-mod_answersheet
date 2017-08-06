@@ -45,4 +45,14 @@ class course_module_viewed extends \core\event\course_module_viewed {
         $this->data['objecttable'] = 'answersheet';
         parent::init();
     }
+
+    public static function create_from_cm(\cm_info $cm, $instance, $course) {
+        $event = static::create(array(
+            'objectid' => $cm->instance,
+            'context' => $cm->context,
+        ));
+        $event->add_record_snapshot('course', $course);
+        $event->add_record_snapshot($cm->modname, $instance);
+        return $event;
+    }
 }

@@ -48,7 +48,8 @@ class backup_answersheet_activity_structure_step extends backup_activity_structu
         // Define the root element describing the answersheet instance.
         $answersheet = new backup_nested_element('answersheet', array('id'), array(
             'name', 'intro', 'introformat', 'grade', 'questionscount',
-            'questionsoptions', 'answerslist', 'completionsubmit', 'completionpass'));
+            'questionsoptions', 'answerslist', 'explanations', 'explanationsformat',
+            'completionsubmit', 'completionpass'));
 
         // If we had more elements, we would build the tree here.
 

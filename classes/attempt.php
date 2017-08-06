@@ -113,7 +113,9 @@ class mod_answersheet_attempt {
             'answersheetid' => $answersheet->id,
             'timestarted' => time()
         ));
-        return self::get($id, $cm, $answersheet);
+        $attempt = self::get($id, $cm, $answersheet);
+        \mod_answersheet\event\attempt_created::create_from_record($attempt->attempt, $cm)->trigger();
+        return $attempt;
     }
 
     /**
@@ -304,6 +306,12 @@ class mod_answersheet_attempt {
             $record['islast'] = $this->attempt->islast = 1;
         }
         $DB->update_record('answersheet_attempt', $record);
+
+        if ($finish) {
+            \mod_answersheet\event\attempt_submitted::create_from_record($this->attempt, $this->cm)->trigger();
+        } else {
+            \mod_answersheet\event\attempt_saved::create_from_record($this->attempt, $this->cm)->trigger();
+        }
 
         if ($finish) {
             answersheet_update_grades($this->answersheet, $this->attempt->userid);
