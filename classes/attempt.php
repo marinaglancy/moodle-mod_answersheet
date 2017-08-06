@@ -33,8 +33,11 @@ defined('MOODLE_INTERNAL') || die();
  */
 class mod_answersheet_attempt {
 
+    /** @var stdClass */
     protected $attempt;
+    /** @var cm_info */
     protected $cm;
+    /** @var stdClass */
     protected $answersheet;
 
     /**
@@ -359,6 +362,8 @@ class mod_answersheet_attempt {
      * Displays the attempt (as a form or review)
      */
     public function display() {
+        global $OUTPUT;
+
         $form = new mod_answersheet_attempt_form(null, (object)array('attempt' => $this));
         $q = preg_split('/,/', $this->attempt->answers);
         $form->set_data(array('q' => $q));
@@ -369,7 +374,7 @@ class mod_answersheet_attempt {
             $form = new mod_answersheet_attempt_form(null, (object)array('attempt' => $this));
 
             if (!$finish) {
-                redirect(new moodle_url('/mod/answersheet/view.php', array('id' => $this->cm->id)));
+                redirect($this->cm->url);
             }
         }
         $contents = '';
@@ -384,6 +389,9 @@ class mod_answersheet_attempt {
             $contents .= $this->attempt_info();
         }
         $contents .= $form->render();
+        if ($finish) {
+            $contents .= $OUTPUT->continue_button($this->cm->url);
+        }
         return $contents;
     }
 }
