@@ -412,25 +412,28 @@ function answersheet_get_file_info($browser, $areas, $course, $cm, $context, $fi
  *
  * @param stdClass $course the course object
  * @param stdClass $cm the course module object
- * @param stdClass $context the answersheet's context
+ * @param context $context the answersheet's context
  * @param string $filearea the name of the file area
  * @param array $args extra arguments (itemid, path)
  * @param bool $forcedownload whether or not force download
  * @param array $options additional options affecting the file serving
  */
 function answersheet_pluginfile($course, $cm, $context, $filearea, array $args, $forcedownload, array $options=array()) {
-    global $DB, $CFG;
+    global $DB, $CFG, $PAGE;
 
-    if ($context->contextlevel != CONTEXT_MODULE) {
+    if ($context->contextlevel != CONTEXT_MODULE || $cm->modname !== 'answersheet') {
         send_file_not_found();
     }
 
     require_login($course, true, $cm);
-
     $itemid = (int)array_shift($args);
 
     if ($filearea === 'explanations' && $itemid == 0) {
-        // TODO properly check access.
+        if (!has_any_capability(['moodle/course:manageactivities', 'mod/answersheet:viewreports'], $context)) {
+            if (!mod_answersheet_attempt::has_completed_attempts($cm->instance)) {
+                send_file_not_found();
+            }
+        }
 
         $fs = get_file_storage();
         $relativepath = implode('/', $args);

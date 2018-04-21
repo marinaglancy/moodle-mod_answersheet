@@ -85,6 +85,22 @@ class mod_answersheet_attempt {
     }
 
     /**
+     * Does this user have completed attempts
+     *
+     * @param int $cmid
+     * @return bool
+     */
+    public static function has_completed_attempts($instanceid) {
+        global $DB, $USER;
+        if (!isloggedin() || isguestuser()) {
+            return false;
+        }
+        return $DB->record_exists_select('answersheet_attempt',
+            'answersheetid = :aid AND userid = :userid AND timecompleted IS NOT NULL',
+            array('aid' => $instanceid, 'userid' => $USER->id));
+    }
+
+    /**
      * Checks if current user is able to start a new attempt
      *
      * @param cm_info $cm
