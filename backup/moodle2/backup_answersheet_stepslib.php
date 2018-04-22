@@ -49,7 +49,7 @@ class backup_answersheet_activity_structure_step extends backup_activity_structu
         $answersheet = new backup_nested_element('answersheet', array('id'), array(
             'name', 'intro', 'introformat', 'grade', 'questionscount',
             'questionsoptions', 'answerslist', 'explanations', 'explanationsformat',
-            'completionsubmit', 'completionpass'));
+            'completionsubmit', 'completionpass', 'question', 'questionformat'));
 
         // If we had more elements, we would build the tree here.
 
@@ -61,6 +61,8 @@ class backup_answersheet_activity_structure_step extends backup_activity_structu
 
         // Define file annotations (we do not use itemid in this example).
         $answersheet->annotate_files('mod_answersheet', 'intro', null);
+        $answersheet->annotate_files('mod_answersheet', 'question', null);
+        $answersheet->annotate_files('mod_answersheet', 'explanations', null);
 
         // Return the root element (answersheet), wrapped into standard activity structure.
         return $this->prepare_activity_structure($answersheet);

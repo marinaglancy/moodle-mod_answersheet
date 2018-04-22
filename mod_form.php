@@ -63,6 +63,11 @@ class mod_answersheet_mod_form extends moodleform_mod {
         $this->standard_intro_elements();
 
         $mform->addElement('header', 'answersheetfieldset', get_string('answersheetfieldset', 'answersheet'));
+        $mform->setExpanded('answersheetfieldset', true);
+
+        $mform->addElement('editor', 'question_editor', get_string('question', 'answersheet'),
+            array('rows' => 10), array('maxfiles' => EDITOR_UNLIMITED_FILES, 'context' => $this->context));
+        $mform->addHelpButton('question_editor', 'question', 'answersheet');
 
         $mform->addElement('text', 'questionscount', get_string('questionscount', 'answersheet'));
         $mform->setType('questionscount', PARAM_INT);
@@ -101,6 +106,10 @@ class mod_answersheet_mod_form extends moodleform_mod {
             array('maxfiles' => EDITOR_UNLIMITED_FILES, 'context' => $context),
             $context,
             'mod_answersheet', 'explanations', 0);
+        $data = file_prepare_standard_editor($data, 'question',
+            array('maxfiles' => EDITOR_UNLIMITED_FILES, 'context' => $context),
+            $context,
+            'mod_answersheet', 'question', 0);
         $default_values = (array)$data;
 
     }

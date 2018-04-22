@@ -83,5 +83,7 @@ class restore_answersheet_activity_structure_step extends restore_activity_struc
     protected function after_execute() {
         // Add answersheet related files, no need to match by itemname (just internally handled context).
         $this->add_related_files('mod_answersheet', 'intro', null);
+        $this->add_related_files('mod_answersheet', 'question', null);
+        $this->add_related_files('mod_answersheet', 'explanations', null);
     }
 }

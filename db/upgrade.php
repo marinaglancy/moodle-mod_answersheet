@@ -100,5 +100,28 @@ function xmldb_answersheet_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2017080601, 'answersheet');
     }
 
+    if ($oldversion < 2018042100) {
+
+        // Define field question to be added to answersheet.
+        $table = new xmldb_table('answersheet');
+        $field = new xmldb_field('question', XMLDB_TYPE_TEXT, null, null, null, null, null, 'completionpass');
+
+        // Conditionally launch add field question.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field questionformat to be added to answersheet.
+        $field = new xmldb_field('questionformat', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'question');
+
+        // Conditionally launch add field questionformat.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Answersheet savepoint reached.
+        upgrade_mod_savepoint(true, 2018042100, 'answersheet');
+    }
+
     return true;
 }

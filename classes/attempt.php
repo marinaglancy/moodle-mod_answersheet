@@ -402,6 +402,14 @@ class mod_answersheet_attempt {
             }
         }
         $contents = '';
+
+        // Display question text.
+        $options = array('noclean' => true, 'para' => false, 'filter' => true, 'context' => $this->cm->context, 'overflowdiv' => true);
+        $question = file_rewrite_pluginfile_urls($this->answersheet->question, 'pluginfile.php', $this->cm->context->id,
+            'mod_answersheet', 'question', 0);
+        $question = format_text($question, $this->answersheet->questionformat, $options, null);
+        $contents .= $OUTPUT->box($question);
+
         if ($finish) {
             $a = (object)[
                 'grade' => self::convert_grade($this->answersheet, $this->attempt->grade, true),

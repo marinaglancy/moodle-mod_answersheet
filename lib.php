@@ -84,6 +84,9 @@ function answersheet_add_instance(stdClass $answersheet, mod_answersheet_mod_for
     $answersheet->timecreated = time();
 
     // You may have to add extra stuff in here.
+    $answersheet = file_postupdate_standard_editor($answersheet, 'question',
+        array('maxfiles' => EDITOR_UNLIMITED_FILES), context_module::instance($answersheet->coursemodule),
+        'mod_answersheet', 'question', 0);
     $answersheet = file_postupdate_standard_editor($answersheet, 'explanations',
         array('maxfiles' => EDITOR_UNLIMITED_FILES), context_module::instance($answersheet->coursemodule),
         'mod_answersheet', 'explanations', 0);
@@ -113,6 +116,9 @@ function answersheet_update_instance(stdClass $answersheet, mod_answersheet_mod_
     $answersheet->id = $answersheet->instance;
 
     // You may have to add extra stuff in here.
+    $answersheet = file_postupdate_standard_editor($answersheet, 'question',
+        array('maxfiles' => EDITOR_UNLIMITED_FILES), context_module::instance($answersheet->coursemodule),
+        'mod_answersheet', 'question', 0);
     $answersheet = file_postupdate_standard_editor($answersheet, 'explanations',
         array('maxfiles' => EDITOR_UNLIMITED_FILES), context_module::instance($answersheet->coursemodule),
         'mod_answersheet', 'explanations', 0);
@@ -427,6 +433,18 @@ function answersheet_pluginfile($course, $cm, $context, $filearea, array $args, 
 
     require_login($course, true, $cm);
     $itemid = (int)array_shift($args);
+
+    if ($filearea === 'question' && $itemid == 0) {
+
+        $fs = get_file_storage();
+        $relativepath = implode('/', $args);
+        $fullpath = "/$context->id/mod_answersheet/question/$itemid/$relativepath";
+        if (!$file = $fs->get_file_by_hash(sha1($fullpath)) or $file->is_directory()) {
+            send_file_not_found();
+        }
+
+        send_stored_file($file, null, 0, $forcedownload, $options);
+    }
 
     if ($filearea === 'explanations' && $itemid == 0) {
         if (!has_any_capability(['moodle/course:manageactivities', 'mod/answersheet:viewreports'], $context)) {
